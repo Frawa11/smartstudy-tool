@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy - Asistente de Estudio (v4.6 - Conceptos Mejorados)</title>
+    <!-- Font Awesome, Google Fonts, PDF.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --primary: #4A55E8;
+            --primary-dark: #3C46C4;
+            --secondary: #10B981;
+            --background: #F7F8FC;
+            --surface: #FFFFFF;
+            --on-surface: #1A202C;
+            --on-surface-variant: #4A5568;
+            --outline: #E2E8F0;
+            --radius: 0.75rem;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --white: #FFFFFF;
+            --gray-light: #f8f9fa;
+            --gray: #e9ecef;
+            --secondary-dark: #0B8A62;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --radius-lg: 0.75rem;
+            --radius-sm: 0.375rem;
+            --concept-primary-color: #3498db;
+            --concept-secondary-color: #2ecc71;
+            --concept-card-background: #ffffff;
+            --concept-text-color: #34495e;
+            --concept-header-color: #2c3e50;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; line-height: 1.7; color: var(--on-surface); background-color: var(--background); }
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 25px; }
+        header { background-color: var(--surface); box-shadow: var(--shadow-md); border-radius: var(--radius-lg); padding: 25px 30px; margin-bottom: 35px; text-align: center; }
+        .app-logo i { font-size: 2.8rem; color: var(--primary); margin-right: 12px; }
+        .app-title { font-size: 2.25rem; font-weight: 700; color: var(--on-surface); }
+        .app-subtitle { font-size: 1.15rem; color: var(--on-surface-variant); margin-top: 8px; }
+        .panel { background-color: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 30px; margin-bottom: 35px; }
+        .panel-title { font-size: 1.6rem; font-weight: 600; color: var(--on-surface); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--outline); }
+        .panel-description { text-align: center; margin-bottom: 25px; color: var(--on-surface-variant); font-size: 1.05rem; line-height: 1.6; }
+        .file-upload-area { border: 2px dashed var(--primary); border-radius: var(--radius); padding: 35px; text-align: center; background-color: #F9FAFB; margin-bottom: 25px; cursor: pointer; transition: var(--transition); }
+        .file-upload-area:hover { background-color: #F3F4F6; border-color: var(--primary-dark); transform: scale(1.01); }
+        .file-upload-area p { font-size: 1.1rem; color: var(--on-surface-variant); }
+        .file-upload-area i { font-size: 3rem; color: var(--primary); margin-bottom: 15px; }
+        #pdfFileInput { display: none; }
+        #fileNameDisplay, #progressContainer { margin-top: 18px; font-size: 0.95rem; }
+        .progress-bar-container { width: 100%; background-color: var(--outline); border-radius: var(--radius-sm); overflow: hidden; margin-top: 8px; height: 12px; }
+        .progress-bar { height: 100%; width: 0%; background-color: var(--secondary); transition: width 0.3s ease; border-radius: var(--radius-sm); }
+        .action-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 15px; padding: 12px 22px; background-color: var(--primary); color: var(--white); border: none; border-radius: var(--radius); font-weight: 500; cursor: pointer; transition: var(--transition); text-align: center; font-size: 1rem; box-shadow: var(--shadow-sm); }
+        .action-btn:hover { background-color: var(--primary-dark); transform: translateY(-3px) scale(1.03); box-shadow: var(--shadow-md); }
+        .regenerate-btn { background-color: var(--secondary); margin-bottom: 20px; }
+        .regenerate-btn:hover { background-color: var(--secondary-dark); }
+        .tabs-container { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 35px; }
+        .tabs-header { display: flex; border-bottom: 1px solid var(--outline); overflow-x: auto; scrollbar-width: none; background-color: #F9FAFB; }
+        .tabs-header::-webkit-scrollbar { display: none; }
+        .tab-button { padding: 18px 28px; background-color: transparent; border: none; border-bottom: 3px solid transparent; font-weight: 600; color: var(--on-surface-variant); cursor: pointer; transition: var(--transition); white-space: nowrap; }
+        .tab-button:hover { color: var(--primary); }
+        .tab-button.active { color: var(--primary); border-bottom-color: var(--primary); background-color: var(--surface); }
+        .tab-button i { margin-right: 10px; }
+        .tab-content { padding: 30px; display: none; }
+        .tab-content h2 { margin-bottom: 10px; color: var(--primary); font-size: 1.75rem; }
+        .tab-content.active { display: block; }
+        .flashcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-top: 25px; }
+        .flashcard { height: 220px; perspective: 1200px; cursor: pointer; margin-bottom: 10px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .flashcard:hover { transform: translateY(-8px) scale(1.03); box-shadow: var(--shadow-lg); }
+        .flashcard-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.8s; transform-style: preserve-3d; box-shadow: var(--shadow); border-radius: var(--radius); }
+        .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; border-radius: var(--radius); overflow-y: auto; }
+        .flashcard-front { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--white); }
+        .flashcard-back { background-color: var(--gray-light); color: var(--on-surface); transform: rotateY(180deg); border: 1px solid var(--outline); }
+        .flashcard-text { font-size: 1.15rem; line-height: 1.5; }
+        .flashcard-text-small { font-size: 1rem; line-height: 1.45; }
+        .flashcard-tip { color: rgba(255,255,255,0.7); margin-top: 12px; }
+        .quiz-container { max-width: 850px; margin: auto; }
+        .quiz-question { background-color: var(--surface); border-radius: var(--radius); padding: 25px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+        .quiz-question-text { font-weight: 600; font-size: 1.2rem; margin-bottom: 15px; color: var(--on-surface); }
+        .quiz-options { margin-bottom: 15px; }
+        .quiz-option { padding: 14px 18px; margin-bottom: 8px; background-color: var(--gray-light); border: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); display: flex; align-items: center; }
+        .quiz-option:hover { background-color: var(--gray); }
+        .quiz-option input { margin-right: 15px; }
+        .quiz-feedback { padding: 12px; margin-top: 15px; border-radius: var(--radius-sm); display: none; }
+        .feedback-correct { background-color: #d1fae5; color: #065f46;}
+        .feedback-incorrect { background-color: #fee2e2; color: #b91c1c;}
+        .summary-section { background-color: var(--surface); border-radius: var(--radius); padding: 25px; margin-bottom: 25px; box-shadow: var(--shadow-sm); border-left: 5px solid var(--primary); }
+        #summaryContent .summary-main-extract { margin-bottom: 30px; padding: 20px; background-color: #F9FAFB; border-left: 5px solid var(--secondary); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+        .summary-section h3 { color: var(--primary); margin-bottom: 12px; font-size: 1.25rem; padding-bottom: 10px; border-bottom: 1px solid var(--outline); }
+        .summary-section p { color: var(--on-surface-variant); line-height: 1.75; }
+        .no-content { text-align: center; color: var(--on-surface-variant); font-style: italic; padding: 30px 20px; background-color: #F9FAFB; border-radius: var(--radius); }
+
+        /* Estilos mejorados para Conceptos Clave */
+        #next-key-concept-btn { 
+            padding: 12px 25px;
+            font-size: 1em;
+            font-weight: 700;
+            color: #fff;
+            background-color: var(--concept-secondary-color); 
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            display: block; 
+            margin: 0 auto 20px auto; 
+            max-width: 280px; 
+        }
+        #next-key-concept-btn:hover {
+            background-color: #27ae60; 
+            transform: translateY(-2px);
+        }
+        #next-key-concept-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        #next-key-concept-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        #key-concepts-display-wrapper {
+            perspective: 1000px;
+            max-width: 700px; 
+            margin: 0 auto; 
+        }
+        #key-concept-card {
+            background-color: var(--concept-card-background);
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            min-height: 250px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; 
+            overflow-y: auto; 
+        }
+        #key-concept-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            animation: pulse 0.5s ease-in-out;
+        }
+        .key-concept-title-card { 
+            font-size: 1.7em; 
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--concept-primary-color);
+            border-bottom: 2px solid var(--concept-primary-color);
+            padding-bottom: 10px;
+        }
+        .key-concept-content-card p, .key-concept-content-card ul { 
+            margin-bottom: 12px;
+            font-size: 1em;
+            color: var(--concept-text-color);
+            line-height: 1.6; 
+        }
+        .key-concept-content-card ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .key-concept-content-card ul li {
+            padding-left: 25px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .key-concept-content-card ul li::before {
+            content: '✓';
+            color: var(--concept-secondary-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .key-concept-content-card strong {
+            color: var(--concept-header-color);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .app-container { padding: 15px; }
+            .tabs-header { flex-wrap: wrap; }
+            .tab-button { padding: 12px 15px; flex-grow: 1; }
+            .flashcards-grid { grid-template-columns: 1fr; }
+            #key-concepts-display-wrapper { max-width: 100%; }
+            #key-concept-card { min-height: 200px; }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } .slide-up { animation: slideUp 0.5s ease-in-out; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+             <div class="app-logo">
+                <i class="fas fa-brain"></i>
+                <h1 class="app-title">SmartStudy</h1>
+            </div>
+            <p class="app-subtitle">Materiales de estudio inteligentes y adaptativos</p>
+        </header>
+
+        <div class="panel">
+            <h2 class="panel-title">Cargar Documento PDF</h2>
+            <p class="panel-description">
+                Sube tu archivo PDF y SmartStudy generará automáticamente tarjetas de estudio (flashcards), resúmenes detallados, quizzes interactivos y conceptos clave para potenciar tu aprendizaje.
+            </p>
+            <div class="file-upload-area" id="fileUploadDropArea">
+                <input type="file" id="pdfFileInput" accept=".pdf">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Arrastra y suelta un archivo PDF aquí, o haz clic para seleccionar</p>
+            </div>
+            <div id="fileNameDisplay">Ningún archivo seleccionado</div>
+            <div id="progressContainer" style="display:none;">
+                <p>Procesando: <span id="progressText">0%</span></p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="studyContainer" class="tabs-container" style="display:none;">
+            <h2 id="documentTitleDisplay" class="panel-title" style="text-align: center; border-bottom: none; margin-bottom: 0;"></h2>
+            <div class="tabs-header">
+                <button id="tabFlashcards" class="tab-button">
+                    <i class="fas fa-clone"></i> Flashcards
+                </button>
+                <button id="tabSummary" class="tab-button">
+                    <i class="fas fa-compress-alt"></i> Resumen
+                </button>
+                <button id="tabQuiz" class="tab-button">
+                    <i class="fas fa-question-circle"></i> Quiz Interactivo
+                </button>
+                <button id="tabConcepts" class="tab-button"> 
+                    <i class="fas fa-lightbulb"></i> Conceptos Clave
+                </button>
+            </div>
+            <div id="flashcardsContent" class="tab-content"></div>
+            <div id="summaryContent" class="tab-content"></div>
+            <div id="quizContent" class="tab-content"></div>
+            <div id="conceptsContent" class="tab-content"> 
+                <!-- El contenido se generará dinámicamente por JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTES ACTUALIZADAS ---
+        const MIN_FLASHCARDS = 5;
+        const MAX_FLASHCARDS = 25;
+        const FLASHCARDS_PER_1000_WORDS = 5;
+
+        const MIN_SUMMARY_POINTS = 6;
+        const MAX_SUMMARY_POINTS = 8;
+        const SUMMARY_SENTENCES_PER_POINT_TARGET = 3;
+        const SUMMARY_MIN_WORDS_PER_POINT = 30;
+        const SUMMARY_MAX_CHARS_PER_POINT = 700;
+
+        const MIN_QUIZ_QUESTIONS = 5;
+        const MAX_QUIZ_QUESTIONS = 20;
+        const QUIZ_QUESTIONS_PER_1000_WORDS = 3;
+
+        const MIN_KEY_CONCEPTS = 8;
+        const MAX_KEY_CONCEPTS = 20; 
+        const KEY_CONCEPTS_PER_1000_WORDS = 5; 
+        const KEY_CONCEPT_MAX_CONTENT_LENGTH = 600; 
+        const KEY_CONCEPT_MIN_CONTENT_LENGTH = 50;  
+        const KEY_CONCEPT_MAX_TITLE_LENGTH = 80; 
+        const KEY_CONCEPT_MIN_TITLE_LENGTH = 10;
+
+        // --- ELEMENTOS DEL DOM ---
+        const studyContainer = document.getElementById('studyContainer');
+        const flashcardsContent = document.getElementById('flashcardsContent');
+        const summaryContent = document.getElementById('summaryContent');
+        const quizContent = document.getElementById('quizContent');
+        const conceptsContent = document.getElementById('conceptsContent'); 
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const pdfFileInput = document.getElementById('pdfFileInput');
+        const fileUploadDropArea = document.getElementById('fileUploadDropArea');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressText = document.getElementById('progressText');
+        const progressBar = document.getElementById('progressBar');
+        const documentTitleDisplay = document.getElementById('documentTitleDisplay');
+
+        let currentProcessedText = "";
+        let currentDocumentTitle = "";
+        let allGeneratedFlashcards = [];
+        let allGeneratedSummaryPoints = [];
+        let allGeneratedQuizQuestions = [];
+        let keyConceptsForDisplay = []; 
+        let currentKeyConceptIndex = -1; 
+
+        // --- EVENT LISTENERS ---
+        fileUploadDropArea.addEventListener('click', () => pdfFileInput.click());
+        fileUploadDropArea.addEventListener('dragover', (event) => { event.preventDefault(); fileUploadDropArea.style.borderColor = 'var(--secondary)';});
+        fileUploadDropArea.addEventListener('dragleave', () => { fileUploadDropArea.style.borderColor = 'var(--primary)';});
+        fileUploadDropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileUploadDropArea.style.borderColor = 'var(--primary)';
+            if (event.dataTransfer.files.length) {
+                pdfFileInput.files = event.dataTransfer.files;
+                handleFileSelect({ target: pdfFileInput });
+            }
+        });
+        pdfFileInput.addEventListener('change', handleFileSelect);
+        document.getElementById('tabFlashcards').addEventListener('click', () => activateTab('flashcardsContent'));
+        document.getElementById('tabSummary').addEventListener('click', () => activateTab('summaryContent'));
+        document.getElementById('tabQuiz').addEventListener('click', () => activateTab('quizContent'));
+        document.getElementById('tabConcepts').addEventListener('click', () => activateTab('conceptsContent')); 
+
+        // --- FUNCIONES PRINCIPALES ---
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type === "application/pdf") {
+                fileNameDisplay.textContent = `Archivo: ${file.name}`;
+                currentDocumentTitle = file.name.replace('.pdf', '');
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+                studyContainer.style.display = 'none';
+                keyConceptsForDisplay = []; 
+                currentKeyConceptIndex = -1;
+
+                let currentProgress = 0;
+                const progressInterval = setInterval(() => {
+                    currentProgress += 10;
+                    if (currentProgress <= 30) {
+                        progressBar.style.width = `${currentProgress}%`;
+                        progressText.textContent = `${currentProgress}%`;
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 100);
+
+                try {
+                    const rawText = await extractTextFromPdf(file);
+                    progressBar.style.width = `50%`; progressText.textContent = `50%`;
+
+                    currentProcessedText = cleanAndRefineText(rawText);
+                    progressBar.style.width = `70%`; progressText.textContent = `70%`;
+
+                    documentTitleDisplay.textContent = currentDocumentTitle;
+                    generateAndDisplayMaterials();
+                    progressBar.style.width = `100%`; progressText.textContent = `100%`;
+                    setTimeout(() => { progressContainer.style.display = 'none';}, 500);
+
+                } catch (error) {
+                    console.error("Error procesando PDF:", error);
+                    fileNameDisplay.textContent = "Error al procesar el PDF.";
+                    progressContainer.style.display = 'none';
+                    clearInterval(progressInterval);
+                }
+            } else {
+                fileNameDisplay.textContent = "Por favor, selecciona un archivo PDF.";
+            }
+        }
+
+        function generateAndDisplayMaterials() {
+            if (!currentProcessedText) return;
+
+            progressBar.style.width = `75%`; progressText.textContent = `75% (Generando...)`;
+            allGeneratedFlashcards = generateAllPossibleFlashcards(currentProcessedText);
+            allGeneratedSummaryPoints = generateAllPossibleSummaryPoints(currentProcessedText);
+            allGeneratedQuizQuestions = generateAllPossibleQuizQuestions(currentProcessedText);
+            const allPotentialKeyConcepts = generateAllPossibleKeyConcepts(currentProcessedText); 
+            progressBar.style.width = `90%`; progressText.textContent = `90% (Renderizando...)`;
+
+            studyContainer.style.display = 'block';
+            renderFlashcards();
+            renderSummary();
+            renderQuiz();
+            renderKeyConcepts(allPotentialKeyConcepts); 
+            activateTab('flashcardsContent'); 
+            studyContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function extractTextFromPdf(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            const totalPages = pdf.numPages;
+            for (let i = 1; i <= totalPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(" ") + "\n"; 
+                if (totalPages > 5 && i % Math.floor(totalPages / 10) === 0) {
+                    const extractionProgress = 30 + Math.round((i / totalPages) * 20);
+                     progressBar.style.width = `${extractionProgress}%`;
+                     progressText.textContent = `${extractionProgress}%`;
+                }
+            }
+            return fullText.trim();
+        }
+
+        function cleanAndRefineText(rawText) {
+            let cleanedText = rawText;
+            const figureReferences = [
+                /véase\s+(la\s+)?(figura|tabla|imagen|diagrama|gráfico|cuadro)\s+[\d.]+[a-z]?(\s+y\s+[\d.]+[a-z]?)*/gi,
+                /\(fig\.?\s*[\d.]+[a-z]?(\s*[,y]\s*fig\.?\s*[\d.]+[a-z]?)*\)/gi,
+                /\(ver\s+(figura|tabla)\s+[\d.]+[a-z]?\)/gi,
+                /\b(figura|tabla|gráfico|diagrama|imagen|cuadro)\s+nº?\s*[\d.]+[a-z]?\b/gi,
+                /\b(figuras|tablas|gráficos|diagramas|imágenes|cuadros)\s+[\d.]+[a-z]?(\s+a\s+[\d.]+[a-z]?)?\b/gi,
+                /\[\s*(figura|imagen|diagrama|tabla|gráfico|cuadro)\s*.*?\]/gi,
+                /\(Fotografía de.*?\)/gi,
+                /Fuente:.*?\n/gi
+            ];
+            figureReferences.forEach(regex => {
+                cleanedText = cleanedText.replace(regex, '');
+            });
+            cleanedText = cleanedText.replace(/\n\s*\n\s*\n+/g, '\n\n'); 
+            cleanedText = cleanedText.replace(/([a-zA-ZáéíóúÁÉÍÓÚñÑ0-9,;:])\n(?![A-Z\d\s•*-])/g, '$1 '); 
+            cleanedText = cleanedText.split('\n\n').map(paragraph => {
+                return paragraph.replace(/\n/g, ' ').trim(); 
+            }).join('\n\n');
+            cleanedText = cleanedText.replace(/\s\s+/g, ' '); 
+            return cleanedText.trim();
+        }
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                console.warn("escapeHtml recibió un valor no string:", unsafe);
+                return String(unsafe); 
+            }
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function activateTab(tabId) {
+            tabButtons.forEach(button => button.classList.remove('active'));
+            tabContents.forEach(content => {
+                if (content.id === tabId) { 
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+            const buttonIdToActivate = 'tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1).replace('Content', '');
+            const activeButton = document.getElementById(buttonIdToActivate);
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+
+            if (tabId === 'conceptsContent') {
+                const card = conceptsContent.querySelector('#key-concept-card');
+                const nextBtn = conceptsContent.querySelector('#next-key-concept-btn');
+
+                if (!card || !nextBtn) return; 
+
+                if (keyConceptsForDisplay.length > 0) {
+                    nextBtn.style.display = 'block'; 
+                    if (currentKeyConceptIndex === -1 || !card.classList.contains('visible')) { 
+                        displayNextKeyConceptFromList(); 
+                    } else {
+                        card.classList.remove('visible');
+                        setTimeout(() => card.classList.add('visible'), 50); 
+                    }
+                } else { 
+                    card.innerHTML = `<p class="no-content">No se pudieron extraer conceptos clave para este documento.</p>`;
+                    if (!card.classList.contains('visible')) {
+                        setTimeout(() => card.classList.add('visible'), 50);
+                    }
+                    
+                    if (nextBtn) { 
+                        nextBtn.innerHTML = 'No hay Conceptos';
+                        nextBtn.disabled = true;
+                        nextBtn.style.display = 'block'; 
+                    }
+                }
+            }
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // --- FUNCIONES DE GENERACIÓN MEJORADAS ---
+        function generateAllPossibleFlashcards(text) { 
+            const candidates = [];
+            const sentences = text.split(/[.!?]/).map(s => s.trim()).filter(s => s.length > 30 && s.length < 300);
+            sentences.forEach(sentence => {
+                if (/\bes\s+un[ao]?\b|\bse\s+define\s+como\b|\bconsiste\s+en\b/i.test(sentence)) {
+                    let parts = sentence.split(/\bes\s+un[ao]?\b|\bse\s+define\s+como\b|\bconsiste\s+en\b/i);
+                    if (parts.length > 1 && parts[0].trim().length > 3 && parts[0].trim().length < 70) {
+                         candidates.push({
+                            question: `¿Qué es "${parts[0].trim()}"?`,
+                            answer: parts.slice(1).join(" ").trim()
+                        });
+                    }
+                }
+                else if (sentence.length > 80) {
+                    const firstPart = sentence.substring(0, sentence.indexOf(' ', 40) !== -1 ? sentence.indexOf(' ', 40) : 40);
+                     candidates.push({
+                        question: `Describe: "${firstPart}..."`,
+                        answer: sentence
+                    });
+                }
+            });
+            if (candidates.length === 0 && text.length > 0) {
+                candidates.push({ question: "Concepto Principal del Texto", answer: text.substring(0, Math.min(text.length, 200)) + "..."});
+            }
+            return candidates;
+        }
+
+        function generateAllPossibleSummaryPoints(text) { 
+            const candidates = [];
+            const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.split(/\s+/).length > 20);
+
+            paragraphs.forEach(paragraph => {
+                const sentences = paragraph.split(/[.!?]/).map(s => s.trim()).filter(s => s.length > 15 && s.split(/\s+/).length >= 5);
+                for (let i = 0; i <= sentences.length - SUMMARY_SENTENCES_PER_POINT_TARGET; i++) {
+                    const sentenceChunk = sentences.slice(i, i + SUMMARY_SENTENCES_PER_POINT_TARGET);
+                    let summaryPointContent = sentenceChunk.join('. ').trim();
+                    if (summaryPointContent.length > 0 && !/[.!?]$/.test(summaryPointContent)) {
+                        summaryPointContent += '.';
+                    }
+                    summaryPointContent = summaryPointContent.replace(/\.\.+/g, '.');
+
+                    if (summaryPointContent.split(/\s+/).length >= SUMMARY_MIN_WORDS_PER_POINT &&
+                        summaryPointContent.length <= SUMMARY_MAX_CHARS_PER_POINT &&
+                        summaryPointContent.length > 50) {
+
+                        let title = "Punto Clave";
+                        if (sentenceChunk[0]) {
+                            const firstSentenceWords = sentenceChunk[0].split(/\s+/);
+                            let titleWordCount = Math.min(firstSentenceWords.length, 7);
+                            if (firstSentenceWords.slice(0, titleWordCount).join(" ").length < 20 && firstSentenceWords.length > titleWordCount) {
+                                titleWordCount = Math.min(firstSentenceWords.length, 10);
+                            }
+                            title = firstSentenceWords.slice(0, titleWordCount).join(" ");
+                            title = title.charAt(0).toUpperCase() + title.slice(1);
+                            title = title.replace(/[.,;:!?]$/, '').trim();
+                            if (title.length > 80) title = title.substring(0, 80) + "...";
+                        }
+                        candidates.push({ title: title, content: summaryPointContent });
+                    }
+                }
+            });
+            if (candidates.length < MAX_SUMMARY_POINTS) {
+                const allSentences = text.split(/[.!?]/).map(s => s.trim()).filter(s => s.length > 80 && s.length < 450);
+                allSentences.forEach(sentence => {
+                    if (/\b(importante|principal|conclusión|fundamental|clave|destacado|esencial|por lo tanto|en consecuencia|resulta que|cabe señalar)\b/i.test(sentence)) {
+                        let title = sentence.split(/\s+/).slice(0, 7).join(" ");
+                        title = title.charAt(0).toUpperCase() + title.slice(1);
+                        if (title.length > 80) title = title.substring(0, 80) + "...";
+                        if (!candidates.some(c => c.content.includes(sentence.substring(0,50)))) {
+                             candidates.push({ title: `Idea Relevante: ${title}`, content: sentence });
+                        }
+                    }
+                });
+            }
+            if (candidates.length === 0 && text.length > 0) {
+                candidates.push({ title: "Resumen General Detallado", content: text.substring(0, Math.min(text.length, SUMMARY_MAX_CHARS_PER_POINT - 50)) + "..."});
+            }
+            const uniqueContent = new Set();
+            return candidates.filter(candidate => {
+                if (candidate.content && candidate.content.length > SUMMARY_MIN_WORDS_PER_POINT / 2) {
+                    const contentKey = candidate.content.substring(0, 100).toLowerCase();
+                    if (!uniqueContent.has(contentKey)) {
+                        uniqueContent.add(contentKey);
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        function generateAllPossibleQuizQuestions(text) { 
+            const candidates = [];
+            const sentences = text.split(/[.!?]/).map(s => s.trim()).filter(s => s.length > 40 && s.split(/\s+/).length >= 7);
+            sentences.forEach(sentence => {
+                const words = sentence.split(/\s+/);
+                for (let i = 0; i < 2; i++) { 
+                    if (words.length < 5) break;
+                    const answerIndex = Math.floor(1 + Math.random() * (words.length - 2)); 
+                    const correctAnswer = words[answerIndex];
+                    if (correctAnswer.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/.test(correctAnswer) || correctAnswer.toLowerCase().length < 3) continue;
+
+                    const questionText = words.map((w, idx) => idx === answerIndex ? "_______" : w).join(" ");
+                    const options = [{ text: correctAnswer, correct: true }];
+                    let distractors = [];
+                    for(let j=0; j < 10 && distractors.length < 3; j++){
+                        const randomSentenceIdx = Math.floor(Math.random() * sentences.length);
+                        if (sentences[randomSentenceIdx] === sentence && sentences.length > 1) continue; 
+                        const randomWords = sentences[randomSentenceIdx].split(/\s+/);
+                        const randomDistractor = randomWords[Math.floor(Math.random() * randomWords.length)];
+                        if (randomDistractor && randomDistractor.toLowerCase() !== correctAnswer.toLowerCase() &&
+                            randomDistractor.length > 2 && /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/.test(randomDistractor) &&
+                            !distractors.includes(randomDistractor) &&
+                            !options.find(o => o.text.toLowerCase() === randomDistractor.toLowerCase())) {
+                           distractors.push(randomDistractor);
+                        }
+                    }
+                    const genericDistractors = ["palabra", "concepto", "idea", "término", "elemento"];
+                    shuffleArray(genericDistractors);
+                    let k = 0;
+                    while(distractors.length < 3 && k < genericDistractors.length) {
+                        const d = genericDistractors[k++];
+                        if (!distractors.includes(d) && correctAnswer.toLowerCase() !== d.toLowerCase() && !options.find(o => o.text.toLowerCase() === d.toLowerCase())) {
+                            distractors.push(d);
+                        }
+                    }
+
+                    distractors.slice(0,3).forEach(d => options.push({ text: d, correct: false }));
+                    if(options.length < 2) continue; 
+                    
+                    candidates.push({
+                        question: questionText + "?",
+                        options: shuffleArray(options),
+                        explanation: `La oración original era: "${sentence}"`
+                    });
+                }
+            });
+            if (candidates.length === 0 && text.length > 0) {
+                 candidates.push({
+                    question: "No se pudieron generar preguntas específicas. ¿El texto es muy técnico o corto?",
+                    options: shuffleArray([{text:"Sí", correct:true}, {text:"No", correct:false}, {text:"Quizás", correct:false}, {text:"No lo sé", correct:false}]),
+                    explanation: "Esta es una pregunta de ejemplo debido a la falta de contenido analizable para quizzes."
+                });
+            }
+            return candidates;
+        }
+
+        // --- FUNCIÓN MEJORADA PARA CONCEPTOS CLAVE (vPrevia) ---
+        function generateAllPossibleKeyConcepts(text) {
+            const candidates = [];
+            const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 20);
+
+            function createTitle(sentence, maxLength = KEY_CONCEPT_MAX_TITLE_LENGTH, minLength = KEY_CONCEPT_MIN_TITLE_LENGTH) {
+                let title = sentence.trim();
+                const definitionPattern = /^(.*?)\s+(se define como|es|son|consiste en|se refiere a|significa)/i;
+                const match = title.match(definitionPattern);
+                
+                if (match && match[1] && match[1].length >= minLength && match[1].length <= maxLength) {
+                    title = match[1];
+                } else {
+                    const words = title.split(/\s+/);
+                    let shortTitle = "";
+                    for (const word of words) {
+                        if (shortTitle.length + word.length + (shortTitle ? 1 : 0) > maxLength) break;
+                        shortTitle += (shortTitle ? " " : "") + word;
+                        if (word.match(/[.:;!?]$/) && shortTitle.length >= minLength) break;
+                    }
+                    title = shortTitle.trim() || words.slice(0, Math.min(words.length, 10)).join(" "); // Fallback: first 10 words
+                }
+
+                title = title.replace(/[.,;:!?]$/, '').trim();
+                title = title.charAt(0).toUpperCase() + title.slice(1);
+
+                if (title.length > maxLength) title = title.substring(0, maxLength - 3) + "...";
+                if (title.length < minLength && sentence.length >= minLength) {
+                     title = sentence.substring(0, Math.min(sentence.length, maxLength));
+                     if (sentence.length > maxLength) title = title.substring(0, maxLength - 3) + "...";
+                     title = title.charAt(0).toUpperCase() + title.slice(1);
+                }
+                return title.trim();
+            }
+
+            paragraphs.forEach(paragraph => {
+                const sentences = paragraph.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 10);
+                if (sentences.length === 0) return;
+
+                if (sentences.length > 1) {
+                    const firstSentence = sentences[0];
+                    const potentialTitle = createTitle(firstSentence, KEY_CONCEPT_MAX_TITLE_LENGTH, KEY_CONCEPT_MIN_TITLE_LENGTH / 2);
+                    if (potentialTitle.length >= KEY_CONCEPT_MIN_TITLE_LENGTH && potentialTitle.length <= KEY_CONCEPT_MAX_TITLE_LENGTH) {
+                        const remainingContent = sentences.slice(1).join(" ").trim();
+                        if (remainingContent.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH && remainingContent.length <= KEY_CONCEPT_MAX_CONTENT_LENGTH) {
+                            candidates.push({ title: potentialTitle, content: remainingContent });
+                        }
+                    }
+                }
+
+                if (paragraph.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH && paragraph.length <= KEY_CONCEPT_MAX_CONTENT_LENGTH) {
+                    const potentialTitle = createTitle(sentences[0], KEY_CONCEPT_MAX_TITLE_LENGTH, KEY_CONCEPT_MIN_TITLE_LENGTH);
+                    if (potentialTitle.length >= KEY_CONCEPT_MIN_TITLE_LENGTH && paragraph.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH) {
+                        if (!(potentialTitle.length > paragraph.length * 0.7 && sentences.length === 1)) {
+                             candidates.push({ title: potentialTitle, content: paragraph });
+                        }
+                    }
+                }
+            });
+            
+            const allSentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 25);
+            allSentences.forEach(sentence => {
+                const definitionMatch = sentence.match(/^(.+?)\s+(es|son|se define como|se refiere a|consiste en)\s+(.+)$/i);
+                if (definitionMatch) {
+                    let term = definitionMatch[1].trim();
+                    let definition = definitionMatch[3].trim();
+                    term = createTitle(term, KEY_CONCEPT_MAX_TITLE_LENGTH, KEY_CONCEPT_MIN_TITLE_LENGTH / 2);
+
+                    if (term.length >= KEY_CONCEPT_MIN_TITLE_LENGTH && term.length <= KEY_CONCEPT_MAX_TITLE_LENGTH &&
+                        definition.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH / 2 && definition.length <= KEY_CONCEPT_MAX_CONTENT_LENGTH) {
+                        candidates.push({ title: term, content: definition });
+                    }
+                } else if (sentence.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH && sentence.length <= KEY_CONCEPT_MAX_CONTENT_LENGTH) {
+                    const potentialTitle = createTitle(sentence.substring(0, Math.min(sentence.length, 60)), KEY_CONCEPT_MAX_TITLE_LENGTH, KEY_CONCEPT_MIN_TITLE_LENGTH);
+                     if (potentialTitle.length >= KEY_CONCEPT_MIN_TITLE_LENGTH) {
+                        if (potentialTitle.toLowerCase() !== sentence.toLowerCase()) {
+                            candidates.push({ title: potentialTitle, content: sentence });
+                        }
+                    }
+                }
+            });
+
+            if (candidates.length < MIN_KEY_CONCEPTS / 2) { 
+                paragraphs.forEach(p => {
+                    const sentences = p.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 10);
+                    for (let i = 0; i < sentences.length; i++) {
+                        let currentChunk = sentences.slice(i, i + 2).join(" "); 
+                        currentChunk = currentChunk.substring(0, KEY_CONCEPT_MAX_CONTENT_LENGTH);
+                        if (currentChunk.length >= KEY_CONCEPT_MIN_CONTENT_LENGTH) {
+                            const title = createTitle(sentences[i], KEY_CONCEPT_MAX_TITLE_LENGTH, KEY_CONCEPT_MIN_TITLE_LENGTH);
+                            if (title.length >= KEY_CONCEPT_MIN_TITLE_LENGTH) {
+                                candidates.push({ title: title, content: currentChunk });
+                            }
+                        }
+                    }
+                });
+            }
+
+            const uniqueConcepts = new Map();
+            candidates.forEach(c => {
+                if (!c.title || !c.content || c.title.length < KEY_CONCEPT_MIN_TITLE_LENGTH / 2 || c.content.length < KEY_CONCEPT_MIN_CONTENT_LENGTH / 2) return;
+                if (c.title.split(/\s+/).length > 12) return; 
+                
+                if (c.content.toLowerCase().startsWith(c.title.toLowerCase().substring(0, c.title.length * 0.8)) && c.content.length < c.title.length * 2) {
+                     return;
+                }
+
+                const key = c.title.toLowerCase().substring(0,25) + "::" + c.content.toLowerCase().substring(0, 40);
+                if (!uniqueConcepts.has(key)) {
+                    uniqueConcepts.set(key, c);
+                } else {
+                    const existing = uniqueConcepts.get(key);
+                    if (c.content.length > existing.content.length) { 
+                        uniqueConcepts.set(key, c);
+                    }
+                }
+            });
+
+            let finalCandidates = Array.from(uniqueConcepts.values());
+            finalCandidates.sort((a,b) => (b.content.length + b.title.length) - (a.content.length + a.title.length) );
+            
+            if (finalCandidates.length === 0 && text.length > KEY_CONCEPT_MIN_CONTENT_LENGTH) {
+                finalCandidates.push({
+                    title: "Información Principal del Documento",
+                    content: text.substring(0, Math.min(text.length, KEY_CONCEPT_MAX_CONTENT_LENGTH)) + (text.length > KEY_CONCEPT_MAX_CONTENT_LENGTH ? "..." : "")
+                });
+            }
+            return finalCandidates;
+        }
+
+
+        // --- FUNCIONES DE RENDERIZADO MEJORADAS ---
+        function renderFlashcards() { 
+            flashcardsContent.innerHTML = '<h2 class="fade-in">Tarjetas de Estudio</h2>';
+            addRegenerateButton(flashcardsContent, renderFlashcards);
+
+            const wordCount = currentProcessedText.split(/\s+/).length;
+            const targetCount = Math.max(MIN_FLASHCARDS, Math.min(MAX_FLASHCARDS, Math.round(wordCount / 1000 * FLASHCARDS_PER_1000_WORDS)));
+            const selectedFlashcards = shuffleArray([...allGeneratedFlashcards]).slice(0, targetCount);
+
+            if (selectedFlashcards.length === 0) {
+                flashcardsContent.insertAdjacentHTML('beforeend', '<p class="no-content">No se pudieron generar flashcards. Intenta con otro documento o revisa el contenido.</p>');
+                return;
+            }
+            const flashcardsGrid = document.createElement('div');
+            flashcardsGrid.className = 'flashcards-grid';
+            selectedFlashcards.forEach(flashcard => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'flashcard slide-up';
+                cardDiv.innerHTML = `
+                    <div class="flashcard-inner">
+                        <div class="flashcard-front">
+                            <div class="flashcard-text">${flashcard.question}</div>
+                            <div class="flashcard-tip">Haz clic para ver respuesta</div>
+                        </div>
+                        <div class="flashcard-back">
+                            <div class="flashcard-text flashcard-text-small">${flashcard.answer}</div>
+                        </div>
+                    </div>`;
+                cardDiv.addEventListener('click', () => {
+                    cardDiv.classList.toggle('flipped');
+                });
+                flashcardsGrid.appendChild(cardDiv);
+            });
+            flashcardsContent.appendChild(flashcardsGrid);
+        }
+
+        function renderSummary() { 
+            summaryContent.innerHTML = `<h2 class="fade-in">Resumen del Documento</h2>`;
+            addRegenerateButton(summaryContent, renderSummary);
+
+            const shuffledCandidates = shuffleArray([...allGeneratedSummaryPoints]);
+            let numPointsToDisplay = Math.min(shuffledCandidates.length, MAX_SUMMARY_POINTS);
+
+            if (shuffledCandidates.length >= MIN_SUMMARY_POINTS) {
+                numPointsToDisplay = Math.max(numPointsToDisplay, MIN_SUMMARY_POINTS);
+            } else {
+                numPointsToDisplay = shuffledCandidates.length;
+            }
+
+            const selectedPoints = shuffledCandidates.slice(0, numPointsToDisplay);
+
+            if (selectedPoints.length === 0) {
+                summaryContent.insertAdjacentHTML('beforeend','<p class="no-content">No se pudo generar un resumen. El texto podría ser muy corto o no tener estructura clara para extraer los puntos clave solicitados.</p>');
+                return;
+            }
+
+            summaryContent.insertAdjacentHTML('beforeend', `<div class="summary-main-extract fade-in"><strong>Extracto Principal (Contexto):</strong> ${currentProcessedText.substring(0, Math.min(currentProcessedText.length, 400))}...</div>`);
+
+            const sectionsTitle = document.createElement('h3');
+            sectionsTitle.className = 'fade-in';
+            sectionsTitle.style.marginTop = '30px';
+            sectionsTitle.textContent = `Puntos Clave Identificados (${selectedPoints.length})`;
+            summaryContent.appendChild(sectionsTitle);
+
+            selectedPoints.forEach(point => {
+                const sectionElement = document.createElement('div');
+                sectionElement.className = 'summary-section slide-up';
+                const titleText = point.title || "Punto Clave";
+                const contentText = point.content || "No hay contenido para este punto.";
+                sectionElement.innerHTML = `<h3>${escapeHtml(titleText)}</h3><p>${escapeHtml(contentText)}</p>`;
+                summaryContent.appendChild(sectionElement);
+            });
+        }
+
+        function renderQuiz() { 
+            quizContent.innerHTML = '<h2 class="fade-in">Quiz Interactivo</h2>';
+            addRegenerateButton(quizContent, renderQuiz);
+
+            const wordCount = currentProcessedText.split(/\s+/).length;
+            const targetQuestions = Math.max(MIN_QUIZ_QUESTIONS, Math.min(MAX_QUIZ_QUESTIONS, Math.round(wordCount / 1000 * QUIZ_QUESTIONS_PER_1000_WORDS)));
+            const selectedQuestions = shuffleArray([...allGeneratedQuizQuestions]).slice(0, targetQuestions);
+
+            if (selectedQuestions.length === 0) {
+                quizContent.insertAdjacentHTML('beforeend', '<p class="no-content">No se pudieron generar preguntas. Intenta con otro documento.</p>');
+                return;
+            }
+            const quizContainerDiv = document.createElement('div');
+            quizContainerDiv.className = 'quiz-container fade-in';
+            selectedQuestions.forEach((questionData, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'quiz-question slide-up';
+                const questionTextEl = document.createElement('div');
+                questionTextEl.className = 'quiz-question-text';
+                questionTextEl.textContent = `${index + 1}. ${questionData.question}`;
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'quiz-options';
+                questionData.options.forEach((option, optionIndex) => {
+                    const optionElement = document.createElement('label');
+                    optionElement.className = 'quiz-option';
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `question_quiz_${index}`;
+                    radio.value = optionIndex;
+                    radio.dataset.correct = String(option.correct);
+                    const optionTextSpan = document.createElement('span');
+                    optionTextSpan.textContent = option.text;
+                    optionElement.appendChild(radio);
+                    optionElement.appendChild(optionTextSpan);
+                    optionsContainer.appendChild(optionElement);
+                });
+                const feedback = document.createElement('div');
+                feedback.className = 'quiz-feedback';
+                questionElement.appendChild(questionTextEl);
+                questionElement.appendChild(optionsContainer);
+                questionElement.appendChild(feedback);
+                quizContainerDiv.appendChild(questionElement);
+            });
+
+            const checkButton = document.createElement('button');
+            checkButton.className = 'action-btn';
+            checkButton.innerHTML = '<i class="fas fa-check-circle"></i> Comprobar respuestas';
+            checkButton.style.margin = '20px auto';
+            checkButton.style.display = 'block';
+            checkButton.addEventListener('click', () => {
+                let score = 0;
+                const questionElements = quizContainerDiv.querySelectorAll('.quiz-question');
+                questionElements.forEach((questionElement, index) => {
+                    const selectedOption = questionElement.querySelector(`input[name="question_quiz_${index}"]:checked`);
+                    const feedbackElement = questionElement.querySelector('.quiz-feedback');
+                    const currentQuestionData = selectedQuestions[index];
+
+                    if (selectedOption && feedbackElement && currentQuestionData) {
+                        const isCorrect = selectedOption.dataset.correct === 'true';
+                        feedbackElement.textContent = isCorrect ? "¡Correcto! " + (currentQuestionData.explanation || "") : "Incorrecto. " + (currentQuestionData.explanation || "La respuesta no es la seleccionada.");
+                        feedbackElement.className = `quiz-feedback ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+                        feedbackElement.style.display = 'block';
+                        if (isCorrect) score++;
+                    } else if (feedbackElement) {
+                        feedbackElement.textContent = "Por favor, selecciona una opción.";
+                        feedbackElement.className = 'quiz-feedback feedback-incorrect';
+                        feedbackElement.style.display = 'block';
+                    }
+                });
+                let scoreEl = quizContainerDiv.querySelector(".quiz-score-display");
+                if (!scoreEl) {
+                    scoreEl = document.createElement('div');
+                    scoreEl.className = 'summary-section quiz-score-display';
+                    scoreEl.style.textAlign = 'center';
+                    scoreEl.style.marginTop = '30px';
+                    if (quizContainerDiv.contains(checkButton)) {
+                        checkButton.insertAdjacentElement('afterend', scoreEl);
+                    } else {
+                         quizContainerDiv.appendChild(scoreEl);
+                    }
+                }
+                const percentage = selectedQuestions.length > 0 ? Math.round((score / selectedQuestions.length) * 100) : 0;
+                scoreEl.innerHTML = `<h3>Tu puntuación: ${score}/${selectedQuestions.length} (${percentage}%)</h3>
+                                      <p>${percentage >= 80 ? '¡Excelente trabajo!' : percentage >= 60 ? 'Buen esfuerzo, sigue practicando.' : 'Necesitas repasar un poco más.'}</p>`;
+                scoreEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+            quizContainerDiv.appendChild(checkButton);
+            quizContent.appendChild(quizContainerDiv);
+        }
+
+        function renderKeyConcepts(allPotentialKeyConcepts) { 
+            conceptsContent.innerHTML = ''; 
+            conceptsContent.insertAdjacentHTML('beforeend', '<h2 class="fade-in">Conceptos Clave</h2>');
+            
+            const wordCount = currentProcessedText.split(/\s+/).length;
+            const targetCount = Math.max(MIN_KEY_CONCEPTS, Math.min(MAX_KEY_CONCEPTS, Math.round(wordCount / 1000 * KEY_CONCEPTS_PER_1000_WORDS)));
+            
+            keyConceptsForDisplay = allPotentialKeyConcepts.slice(0, Math.min(allPotentialKeyConcepts.length, Math.max(MIN_KEY_CONCEPTS, targetCount), MAX_KEY_CONCEPTS));
+
+
+            const nextButton = document.createElement('button');
+            nextButton.id = 'next-key-concept-btn'; 
+            nextButton.addEventListener('click', () => displayNextKeyConceptFromList()); 
+            
+            const wrapper = document.createElement('div');
+            wrapper.id = 'key-concepts-display-wrapper';
+            
+            const card = document.createElement('div');
+            card.id = 'key-concept-card'; 
+            
+            wrapper.appendChild(card);
+            
+            conceptsContent.appendChild(nextButton); 
+            conceptsContent.appendChild(wrapper);   
+            
+            currentKeyConceptIndex = -1; 
+
+            if (keyConceptsForDisplay.length === 0) {
+                card.innerHTML = `<p class="no-content">No se pudieron extraer conceptos clave para este documento.</p>`;
+                nextButton.innerHTML = 'No hay Conceptos';
+                nextButton.disabled = true;
+                if (!card.classList.contains('visible')) {
+                     setTimeout(() => card.classList.add('visible'), 50); 
+                }
+            } else {
+                nextButton.innerHTML = 'Mostrar Primer Concepto &rarr;';
+                nextButton.disabled = false;
+                if (conceptsContent.classList.contains('active')) {
+                    displayNextKeyConceptFromList(); 
+                } else {
+                    card.innerHTML = `<p style="text-align:center; color: #7f8c8d;">Haga clic en "Mostrar Primer Concepto" o active esta pestaña.</p>`;
+                    if (!card.classList.contains('visible')) {
+                        setTimeout(() => { card.classList.add('visible'); }, 50);
+                    }
+                }
+            }
+        }
+
+        function displayNextKeyConceptFromList() {
+            const card = document.getElementById('key-concept-card');
+            const button = document.getElementById('next-key-concept-btn');
+            
+            if (!card || !button || keyConceptsForDisplay.length === 0) {
+                if(button) { button.innerHTML = 'No hay Conceptos'; button.disabled = true; }
+                if(card) card.innerHTML = `<p class="no-content">No hay conceptos disponibles.</p>`;
+                return;
+            }
+
+            card.classList.remove('visible');
+            
+            setTimeout(() => {
+                currentKeyConceptIndex = (currentKeyConceptIndex + 1) % keyConceptsForDisplay.length;
+                const concept = keyConceptsForDisplay[currentKeyConceptIndex];
+                
+                card.innerHTML = `
+                    <h3 class="key-concept-title-card">${escapeHtml(concept.title)}</h3>
+                    <div class="key-concept-content-card">
+                        ${concept.content.split('\n').map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+                    </div>
+                `;
+                
+                card.scrollTop = 0;
+                card.classList.add('visible');
+                button.innerHTML = (currentKeyConceptIndex === keyConceptsForDisplay.length - 1) 
+                    ? 'Reiniciar Conceptos ↺' 
+                    : 'Siguiente Concepto →';
+                button.disabled = false;
+                
+            }, 300);
+        }
+
+        function addRegenerateButton(container, generatorFunction) {
+            const existingRegenButton = container.querySelector('.regenerate-btn');
+            if (existingRegenButton) {
+                existingRegenButton.remove();
+            }
+            const regenButton = document.createElement('button');
+            regenButton.className = 'action-btn regenerate-btn';
+            regenButton.innerHTML = '<i class="fas fa-sync-alt"></i> Regenerar';
+            regenButton.addEventListener('click', generatorFunction);
+
+            const titleElement = container.querySelector('h2');
+            if (titleElement) {
+                titleElement.insertAdjacentElement('afterend', regenButton);
+            } else {
+                container.prepend(regenButton);
+            }
+        }
+    </script>
+
+    <!-- INICIO DE SECCIÓN DE TÉRMINOS Y PIE DE PÁGINA -->
+    <div class="app-container" style="margin-top: 40px; padding-top: 0;">
+        <div class="panel" style="margin-bottom: 20px;">
+            <h2 class="panel-title" style="text-align: left; font-size: 1.4rem;">Términos y Condiciones de Uso - SmartStudy (v4.6)</h2>
+            <div style="font-size: 0.9rem; color: var(--on-surface-variant); line-height: 1.6;">
+                <p><strong>Última actualización:</strong> 23 de Mayo de 2024</p>
+                <p>Bienvenido/a a SmartStudy. Al utilizar esta herramienta de asistente de estudio ("la Herramienta"), usted ("el Usuario") acepta estar legalmente vinculado por los siguientes términos y condiciones. Si no está de acuerdo con estos términos, por favor no utilice la Herramienta.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">1. Descripción del Servicio</h3>
+                <p>SmartStudy procesa archivos PDF subidos por el Usuario para generar materiales de estudio como flashcards, resúmenes, quizzes y conceptos clave. Todo el procesamiento del contenido del PDF se realiza localmente en el navegador del Usuario. Ningún contenido del archivo PDF es enviado o almacenado en servidores externos por la Herramienta.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">2. Uso Aceptable</h3>
+                <p>El Usuario se compromete a utilizar la Herramienta únicamente con fines legales y educativos. El Usuario es el único responsable del contenido de los archivos PDF que sube y debe asegurarse de tener los derechos necesarios para procesar dicho contenido. Está prohibido el uso de la Herramienta para procesar material ilegal, difamatorio, que infrinja derechos de autor o cualquier otro material inapropiado.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">3. Precisión y Fiabilidad</h3>
+                <p>La Herramienta utiliza algoritmos para generar los materiales de estudio. Si bien se esfuerza por la precisión, el contenido generado puede contener errores, omisiones o no ser exhaustivo. La Herramienta se proporciona "tal cual" y no se ofrecen garantías sobre la exactitud, fiabilidad o idoneidad del contenido generado. Es responsabilidad del Usuario verificar la información.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">4. Privacidad y Datos</h3>
+                <p>Como se indica en el punto 1, el procesamiento de los archivos PDF es local. La Herramienta no recopila, almacena ni transmite el contenido de los archivos PDF del Usuario. No se recopila información personal identificable a través del uso básico de la Herramienta.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">5. Limitación de Responsabilidad</h3>
+                <p>En la máxima medida permitida por la ley, el desarrollador de SmartStudy (aameztm@gmail.com) no será responsable de ningún daño directo, indirecto, incidental, especial, consecuente o punitivo que surja del uso o la incapacidad de uso de la Herramienta, incluso si se ha advertido de la posibilidad de tales daños.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">6. Propiedad Intelectual</h3>
+                <p>La Herramienta SmartStudy, incluyendo su código, diseño y elementos visuales, es propiedad de su desarrollador. Se concede al Usuario una licencia limitada, no exclusiva e intransferible para utilizar la Herramienta de acuerdo con estos términos.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">7. Modificaciones a los Términos</h3>
+                <p>Nos reservamos el derecho de modificar estos términos y condiciones en cualquier momento. Se notificará a los usuarios de cambios significativos. El uso continuado de la Herramienta después de tales modificaciones constituirá la aceptación de los nuevos términos.</p>
+
+                <h3 style="font-size: 1.1rem; color: var(--on-surface); margin-top: 15px; margin-bottom: 5px;">8. Contacto</h3>
+                <p>Para cualquier pregunta, comentario o sugerencia sobre estos términos o la Herramienta, por favor contacte a: <a href="mailto:aameztm@gmail.com" style="color: var(--primary);">aameztm@gmail.com</a>.</p>
+            </div>
+        </div>
+
+        <footer style="text-align: center; padding: 20px 0; font-size: 0.9rem; color: var(--on-surface-variant); border-top: 1px solid var(--outline); margin-top: 20px;">
+            <p>SmartStudy v4.6 - Potenciando tu aprendizaje.</p>
+            <p>Comentarios y Sugerencias: <a href="mailto:aameztm@gmail.com" style="color: var(--primary);">aameztm@gmail.com</a></p>
+            <p>&copy; 2024 SmartStudy. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+    <!-- FIN DE SECCIÓN DE TÉRMINOS Y PIE DE PÁGINA -->
+
+</body>
+</html>
